@@ -1,0 +1,69 @@
+users/ : get // dostat seznam vsech uzivatelu
+    params:
+        jwt
+    returns:
+        IEnumerable<User> (without a password)
+    
+users/ : post   // zaregistrovat noveho
+    params:
+        User
+    returns:
+        jwt
+        
+users/ : put // updatenout existujiciho 
+    params:
+        User (id required)
+    returns:
+        result code
+        
+users/login : get // autorizace
+    params:
+        email
+        password
+    returns:
+        jwt or 401
+        
+
+
+recordings/uploadRec : post 
+    params:
+        Recording (
+            int UserId,
+            DateTime CreatedAt,
+            int EstimatedBirdsCount,
+            string Device,
+            bool ByApp,
+            string? Note,
+        )
+    returns:
+        id of the posted recording
+
+recordings/uploadRecPart : post // po obraceni se na tento endpoint, otevre se websocketovy kanal, kam se nahrajou binarni data ty casti
+    params: 
+        RecordingPart (
+            int RecordingId,
+            DateTime Start
+            DateTime End
+            )
+    returns:
+        id of the posted recording part
+            
+recordings/uploadSound : post 
+    or
+websocket
+    data:
+        [4 bytes of recording part id][4 bytes of length][data]
+    returns:
+        http code
+        
+recordings/getMetadata : get 
+    params:
+        not
+    returns:
+        collection of recordings without sound
+        
+recordings/getMetadata : get 
+    params:
+        int id
+    returns:
+        metadata of the recording with provided id

@@ -1,0 +1,9 @@
+StrnadiAPI.sln.DotSettings.user
+.idea
+
+StrnadiAPI/bin
+StrnadiAPI/obj
+
+db_plan.md
+
+StrnadiAPI/appsettings.json
