@@ -8,7 +8,7 @@ public enum UpdateResult
     /// <summary>
     /// The update operation was successful.
     /// </summary>
-    Successful = 1,
+    Success = 1,
 
     /// <summary>
     /// The update operation failed due to a uniqueness constraint violation.

@@ -1,8 +1,8 @@
-﻿namespace StrnadiAPI.Data.Models.Database;
+﻿using System;
+using System.Collections.Generic;
 
-/// <summary>
-/// Číselník dialektů
-/// </summary>
+namespace StrnadiAPI.Data.Models.Database;
+
 public partial class Dialect
 {
     public int Id { get; set; }
@@ -11,10 +11,9 @@ public partial class Dialect
 
     public string PathSpectrogram { get; set; } = null!;
 
-    /// <summary>
-    /// cesta k souboru se vzorovým zvukovým záznamem dialektu
-    /// </summary>
     public string PathVoice { get; set; } = null!;
 
-    public string Description { get; set; } = null!;
+    public string? Description { get; set; }
+
+    public virtual ICollection<DetectedDialect> DetectedDialects { get; set; } = new List<DetectedDialect>();
 }

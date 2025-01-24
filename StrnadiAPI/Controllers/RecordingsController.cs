@@ -22,23 +22,24 @@ public class RecordingsController : ControllerBase
     [HttpGet]
     public IActionResult Get()
     {
-        return Ok(_repo.GetAll());
+        return Ok(_repo.Get());
     }
 
-    [HttpPost]  // overeni
-    public IActionResult UploadNew([FromBody] Recording recording)
+    [HttpPost("[controller]/uploadRec")]
+    public IActionResult UploadRec([FromBody] Recording recording)
     {
+        AddResult result = _repo.Add(recording, returningProperty: rec => rec.Id, out int generatedId);
+
+        if (result == AddResult.Success)
+        {
+            return Ok(generatedId);
+        }
         
-    }
-    
-    [HttpPut]  // overeni
-    public IActionResult Put([FromBody] Recording recording)
-    {
-        
+        return BadRequest();
     }
 
-    [HttpDelete("[controller]/{id:int}")] // overeni
-    public IActionResult Delete([FromQuery] int id)
+    [HttpPost("[controller]/updateRecPart")]
+    public IActionResult UpdateRecPart([FromBody] RecordingPart recordingPart)
     {
         
     }

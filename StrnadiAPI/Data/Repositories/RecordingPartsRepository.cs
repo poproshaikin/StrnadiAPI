@@ -1,41 +1,44 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using StrnadiAPI.Data.Models.Database;
 
 namespace StrnadiAPI.Data.Repositories;
 
-public interface IRecordingsRepository
+public interface IRecordingPartsRepository
 {
-    AddResult Add(Recording recording);
-
-    AddResult Add<TProperty>(Recording recording, 
-        Expression<Func<Recording, TProperty>> returningProperty,
+    AddResult Add(RecordingPart recordingPart);
+    
+    AddResult Add<TProperty>(RecordingPart recordingPart,
+        Expression<Func<RecordingPart, TProperty>> returningProperty,
         out TProperty? returnedValue);
     
-    IReadOnlyList<Recording> Get();
+    IReadOnlyList<RecordingPart> Get();
     
-    Recording? GetById(int id);
+    RecordingPart? GetById(int id);
     
-    UpdateResult Update(Recording updated);
+    UpdateResult Update(RecordingPart updated);
     
     DeleteResult Delete(int id);
+    
+    bool Exists(int recordingPartId);
 }
 
-public class RecordingsRepository : IRecordingsRepository
+public class RecordingPartsRepository : IRecordingPartsRepository
 {
     private StrnadiDbContext _context;
 
-    public RecordingsRepository(StrnadiDbContext context)
+    public RecordingPartsRepository(StrnadiDbContext context)
     {
         _context = context;
     }
     
-    public AddResult Add(Recording recording)
+    public AddResult Add(RecordingPart recordingPart)
     {
         try
         {
-            _context.Recordings.Add(recording);
+            _context.RecordingParts.Add(recordingPart);
             _context.SaveChanges();
             return AddResult.Success;
         }
@@ -44,14 +47,14 @@ public class RecordingsRepository : IRecordingsRepository
             return AddResult.Fail;
         }
     }
-
-    public AddResult Add<TProperty>(Recording recording,
-        Expression<Func<Recording, TProperty>> returningProperty,
+    
+    public AddResult Add<TProperty>(RecordingPart recordingPart,
+        Expression<Func<RecordingPart, TProperty>> returningProperty,
         out TProperty? returnedValue)
     {
         try
         {
-            EntityEntry<Recording> addedEntity = _context.Recordings.Add(recording);
+            EntityEntry<RecordingPart> addedEntity = _context.RecordingParts.Add(recordingPart);
             _context.SaveChanges();
             returnedValue = returningProperty.Compile()(addedEntity.Entity);
             return AddResult.Success;
@@ -63,31 +66,31 @@ public class RecordingsRepository : IRecordingsRepository
         }
     }
 
-    public IReadOnlyList<Recording> Get()
+    public IReadOnlyList<RecordingPart> Get()
     {
-        return _context.Recordings.ToArray();
+        return _context.RecordingParts.ToList();
     }
 
-    public Recording? GetById(int id)
+    public RecordingPart? GetById(int id)
     {
-        return _context.Recordings.FirstOrDefault(r => r.Id == id);
+        return _context.RecordingParts.FirstOrDefault(p => p.Id == id);
     }
 
-    public UpdateResult Update(Recording updated)
+    public UpdateResult Update(RecordingPart updated)
     {
         if (updated.Id == default)
         {
             return UpdateResult.IdNotProvided;
         }
         
-        Recording? recording = _context.Recordings.FirstOrDefault(r => r.Id == updated.Id);
+        RecordingPart? recordingPart = _context.RecordingParts.FirstOrDefault(p => p.Id == updated.Id);
         
-        if (recording is null)
+        if (recordingPart is null)
         {
             return UpdateResult.NotFound;
         }
-        
-        _context.Recordings.Update(recording);
+
+        _context.RecordingParts.Update(recordingPart);
 
         try
         {
@@ -102,16 +105,16 @@ public class RecordingsRepository : IRecordingsRepository
 
     public DeleteResult Delete(int id)
     {
-        Recording? recording = _context.Recordings.FirstOrDefault(r => r.Id == id);
-        
-        if (recording is null)
+        RecordingPart? recordingPart = _context.RecordingParts.FirstOrDefault(p => p.Id == id);
+
+        if (recordingPart is null)
         {
             return DeleteResult.NotFound;
         }
 
         try
         {
-            _context.Recordings.Remove(recording);
+            _context.RecordingParts.Remove(recordingPart);
             _context.SaveChanges();
 
             return DeleteResult.Success;
@@ -120,5 +123,10 @@ public class RecordingsRepository : IRecordingsRepository
         {
             return DeleteResult.Fail;
         }
+    }
+
+    public bool Exists(int id)
+    {
+        return _context.RecordingParts.Any(p => p.Id == id);
     }
 }

@@ -1,14 +1,12 @@
-﻿namespace StrnadiAPI.Data.Models.Database;
+﻿using System;
+using System.Collections.Generic;
 
-/// <summary>
-/// tabulka uživatelů - možná ještě budou přibývat sloupečky a měnit se datové typy
-/// </summary>
+namespace StrnadiAPI.Data.Models.Database;
+
 public partial class User
 {
     public int Id { get; set; }
 
-    public int RoleId { get; set; }
-    
     public string? Nickname { get; set; }
 
     public string Email { get; set; } = null!;
@@ -21,12 +19,9 @@ public partial class User
 
     public DateTime CreationDate { get; set; }
 
-    public bool IsEmailVerified { get; set; }
+    public bool? IsEmailVerified { get; set; }
 
-    /// <summary>
-    /// přírodovědci dodají seznam &quot;souhlasů s&quot; - abychom byli schopni přiřadit hodnoty
-    /// </summary>
-    public bool Consent { get; set; }
+    public bool? Consent { get; set; }
 
     public virtual ICollection<Recording> Recordings { get; set; } = new List<Recording>();
 }

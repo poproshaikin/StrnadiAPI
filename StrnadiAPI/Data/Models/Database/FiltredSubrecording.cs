@@ -1,13 +1,13 @@
-﻿namespace StrnadiAPI.Data.Models.Database;
+﻿using System;
+using System.Collections.Generic;
 
-/// <summary>
-/// Vysekané signifikantní části z nahrávek (např. 5ti vteřinové úseky se zaznamenaným dialektem). Výstup prvního AI modelu pro další zpracování a určení dialektu druhým AI modelem.
-/// </summary>
+namespace StrnadiAPI.Data.Models.Database;
+
 public partial class FiltredSubrecording
 {
     public int Id { get; set; }
 
-    public int RecordingPartsId { get; set; }
+    public int RecordingPartId { get; set; }
 
     public int? BirdsId { get; set; }
 
@@ -17,22 +17,13 @@ public partial class FiltredSubrecording
 
     public DateTime End { get; set; }
 
-    /// <summary>
-    /// pravděpodobnostní vektor jednotlivých dialektů (s jakou mírou pravděpodobnosti se v nahrávce vyskytují: dialekt A, dialekt B, dialekt C,...)
-    /// </summary>
-    public string ProbabilityVector { get; set; } = null!;
+    public string? ProbabilityVector { get; set; }
 
-    /// <summary>
-    /// 0-vloženo\n1-vytvořen pravděpodobnostní vektor\n2-pravděpodobnost dialektu X přesáhla nastavenou hranici a AI sama přiřadila dialekt\n3- přiřazení dialektu ověřeno uživatelem\n4- manuální přiřazení dialektu\n5- dialekt nelze určit ani manuálně
-    /// </summary>
-    public short State { get; set; }
-
-    /// <summary>
-    /// 1 - vzorek je reprezentant nahrávky\n0 - nereprezentuje nahrávku (podružný vzorek)
-    /// </summary>
     public bool RepresentantFlag { get; set; }
 
     public virtual Bird? Birds { get; set; }
 
-    public virtual RecordingPart RecordingParts { get; set; } = null!;
+    public virtual ICollection<DetectedDialect> DetectedDialects { get; set; } = new List<DetectedDialect>();
+
+    public virtual RecordingPart RecordingPart { get; set; } = null!;
 }

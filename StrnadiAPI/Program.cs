@@ -15,7 +15,7 @@ public class Program
         builder.Services.AddDbContext<StrnadiDbContext>();
         builder.Services.AddScoped<IRecordingsRepository, RecordingsRepository>();
         builder.Services.AddScoped<IUsersRepository, UsersRepository>();
-        builder.Services.AddScoped<IStrnadiEmailVerifier, StrnadiEmailVerifier>();
+        builder.Services.AddScoped<IEmailSender, EmailSender>();
         builder.Services.AddCors(corsOptions =>
         {
             corsOptions.AddPolicy(configuration["Cors:PolicyName"], policyBuilder =>

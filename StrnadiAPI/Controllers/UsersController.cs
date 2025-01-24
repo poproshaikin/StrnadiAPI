@@ -13,83 +13,72 @@ namespace StrnadiAPI.Controllers;
 public class UsersController : ControllerBase
 {
     private IUsersRepository _repository;
-    private StrnadiEmailVerifier _verifier;
-    private StrnadiLinkGenerator _generator;
+    private EmailSender _emailSender;
+    private JwtService _jwtService;
     
     public UsersController(IConfiguration configuration, IUsersRepository repository)
     {
         _repository = repository;
-        _generator = new StrnadiLinkGenerator();
-        _verifier = new StrnadiEmailVerifier(configuration);
+        _emailSender = new EmailSender(configuration);
+        _jwtService = new JwtService(configuration);
     }
 
-    [HttpGet]
-    public IActionResult Get([FromBody] string jwt)
+    [HttpGet("[controller]/login")]
+    public IActionResult Login([FromBody] LoginDto loginDto)
     {
+        LoginResult result = _repository.TryLogin(loginDto.Email, loginDto.Password);
+
+        if (result == LoginResult.Success)
+        {
+            return Ok(_jwtService.GenerateToken(loginDto.Email));
+        }
         
+        return Ok(result);
     }
     
-    //
-    // [HttpGet]
-    // public IActionResult Get([FromBody] string orderingJson)
-    // {
-    //     IReadOnlyList<User> orderedUsers = _repository.GetAndOrder(orderingJson);
-    //
-    //     return Ok(orderedUsers);
-    // }
-    //
-    // [HttpGet("/{id:int}")]
-    // public IActionResult Get(int id)
-    // {
-    //     User? user = _repository.Get(id);
-    //     
-    //     return user is null ?
-    //         NotFound() :
-    //         Ok(user);
-    // }
-    //
-    // // reset password
-    //
-    // [HttpPost]
-    // public IActionResult UploadNew([FromBody] User user)
-    // {
-    //     try
-    //     {
-    //         _verifier.SendLink(user.Email, );
-    //         
-    //         _repository.Add(user);
-    //         
-    //         return Ok();
-    //     }
-    //     catch
-    //     {
-    //         return BadRequest();
-    //     }
-    // }
-    //
-    // [HttpPut]
-    // public IActionResult Put([FromBody] string changesJson)
-    // {
-    //     UpdateResult result = _repository.Update(changesJson);
-    //     
-    //     return result switch
-    //     {
-    //         UpdateResult.Successful => Ok(),
-    //         UpdateResult.NotFound => NotFound(),
-    //         UpdateResult.Fail => BadRequest(),
-    //         UpdateResult.IdNotProvided => BadRequest(),
-    //         UpdateResult.WrongIdProvided => BadRequest(),
-    //         UpdateResult.UniquenessViolation => Conflict(),
-    //         
-    //         _ => BadRequest()
-    //     };
-    // }
-    //
-    // [HttpDelete("[controller]/{id:int}")]
-    // public IActionResult Delete(int id)
-    // {
-    //     bool success = _repository.Delete(id);
-    //     
-    //     return success ? Ok() : NotFound();
-    // }
+    [HttpPost]
+    public IActionResult Register([FromBody] User user)
+    {
+        if (user.Email == null!) 
+            return BadRequest();
+        
+        AddResult result = _repository.Add(user);
+        
+        if (result == AddResult.Success)
+        {
+            _emailSender.SendVerificationMessage(HttpContext, user.Email, user.Id);
+            
+            return Ok();
+        }
+
+        return BadRequest();
+    }
+
+    [HttpPut("[controller]/verifyEmail")]
+    public IActionResult VerifyEmail([FromQuery] string userId, [FromQuery] string jwt)
+    {
+#pragma warning disable CS8600 // In the inside of if block the parsedUserId will be always true
+        if (_jwtService.TryParseUserId(jwt, out string parsedUserId))
+#pragma warning restore CS8600 //
+        {
+            if (userId != parsedUserId)
+            {
+                return Unauthorized();
+            }
+
+            _repository.ConfirmEmail(userId);
+        }
+        
+        return Unauthorized();
+    }
+    
+    [HttpGet("/{id:int}")]
+    public IActionResult Get(int id)
+    {
+        User? user = _repository.Get(id);
+        
+        return user is null ?
+            NotFound() :
+            Ok(user);
+    }
 }

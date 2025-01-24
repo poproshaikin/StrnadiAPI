@@ -1,13 +1,13 @@
-﻿namespace StrnadiAPI.Data.Models.Database;
+﻿using System;
+using System.Collections.Generic;
 
-/// <summary>
-/// Originální nahrávka může být slepena z jednotlivých částí. Bylo by fajn ukládat i informace o těchto částech. Mohou se tam vyskytnout třeba nějaké zdroje chyb pro zpracování AI.
-/// </summary>
+namespace StrnadiAPI.Data.Models.Database;
+
 public partial class RecordingPart
 {
     public int Id { get; set; }
 
-    public int RecordingsId { get; set; }
+    public int RecordingId { get; set; }
 
     public DateTime Start { get; set; }
 
@@ -19,11 +19,8 @@ public partial class RecordingPart
 
     public decimal GpsLatitudeEnd { get; set; }
 
-    public decimal GpsLongitudeEnd { get; set; }
+    public decimal GpsLongitude { get; set; }
 
-    /// <summary>
-    /// určení KFME čtverce ve formátu 0000a (56°0\N 5°40\E)\n\nPokud by bylo GPS mimo rozsah KFME, byl by squre NULL
-    /// </summary>
     public string? Square { get; set; }
 
     public string FilePath { get; set; } = null!;
@@ -32,5 +29,7 @@ public partial class RecordingPart
 
     public virtual ICollection<Photo> Photos { get; set; } = new List<Photo>();
 
-    public virtual Recording Recordings { get; set; } = null!;
+    public virtual Recording Recording { get; set; } = null!;
+
+    public virtual ICollection<UserPart> UserParts { get; set; } = new List<UserPart>();
 }

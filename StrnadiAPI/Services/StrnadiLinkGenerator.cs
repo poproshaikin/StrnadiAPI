@@ -1,3 +1,6 @@
+using System.Runtime.CompilerServices;
+using StrnadiAPI.Controllers;
+
 namespace StrnadiAPI.Services;
 
 public class StrnadiLinkGenerator
@@ -7,10 +10,13 @@ public class StrnadiLinkGenerator
         
     }
 
-    public string GenerateLink(HttpContext context)
+    public string GenerateLink(HttpContext context, int userId)
     {
-        context.Request.Host
-        
-        // https://backend.slavetraders.tech/users/verify?id=guid
+        string scheme = context.Request.Scheme;
+        string host = context.Request.Host.ToUriComponent();
+
+        string link = $"{scheme}://{host}/users/{nameof(UsersController.Register)}?guid={userId}";
+
+        return link;
     }
 }
