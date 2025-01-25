@@ -6,41 +6,50 @@ using StrnadiAPI.Data.Repositories;
 namespace StrnadiAPI.Controllers;
 
 [ApiController]
-[Route("[controller]")]
+[Route("/recordings")]
 public class RecordingsController : ControllerBase
 {
-    // dostat overene/neoverene nahravky konkretniho usera
-    // 
-
-    private IRecordingsRepository _repo;
+    private readonly IRecordingsRepository _recRepo;
+    private readonly IRecordingPartsRepository _recPartsRepo;
     
-    public RecordingsController(IRecordingsRepository recordingsRepository)
+    private WsRecordingsController? _cachedWs;
+    
+    public RecordingsController(IRecordingsRepository recRepo, 
+        IRecordingPartsRepository recPartsRepo)
     {   
-        _repo = recordingsRepository;
+        _recRepo = recRepo;
+        _recPartsRepo = recPartsRepo;
     }
     
     [HttpGet]
     public IActionResult Get()
     {
-        return Ok(_repo.Get());
+        return Ok(_recRepo.Get());
     }
 
-    [HttpPost("[controller]/uploadRec")]
+    [HttpPost("/uploadRec")]
     public IActionResult UploadRec([FromBody] Recording recording)
     {
-        AddResult result = _repo.Add(recording, returningProperty: rec => rec.Id, out int generatedId);
-
-        if (result == AddResult.Success)
+        AddResult result = _recRepo.Add(recording, returningProperty: rec => rec.Id, out int generatedId);
+        
+        if (result == AddResult.Fail)
         {
-            return Ok(generatedId);
+            return Conflict();
         }
         
-        return BadRequest();
+        return Ok(generatedId);
     }
 
-    [HttpPost("[controller]/updateRecPart")]
+    [HttpPost("/updateRecPart")]
     public IActionResult UpdateRecPart([FromBody] RecordingPart recordingPart)
     {
-        
+        AddResult result = _recPartsRepo.Add(recordingPart, returningProperty: recPart => recPart.Id, out int generatedId);
+
+        if (result == AddResult.Fail)
+        {
+            return Conflict();
+        }
+
+        return Ok(generatedId);
     }
 }
