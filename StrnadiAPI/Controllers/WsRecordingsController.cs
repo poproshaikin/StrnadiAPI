@@ -7,70 +7,67 @@ using StrnadiAPI.Services;
 namespace StrnadiAPI.Controllers;
 
 [ApiController]
-[Route("[controller]")]
+[Route("/ws/")]
 public class WsRecordingsController : ControllerBase
 {
-    private FileSystemHelper _fsHelper;
-    private IRecordingPartsRepository _repo;
+    private readonly FileSystemHelper _fsHelper;
+    private readonly IRecordingsRepository _recRepo;
+    private readonly IRecordingPartsRepository _recPartsRepo;
 
-    public WsRecordingsController(IRecordingPartsRepository repo)
+    public WsRecordingsController(IRecordingsRepository recRepo, IRecordingPartsRepository recPartsRepo)
     {
         _fsHelper = new FileSystemHelper();
-        _repo = repo;
+        _recRepo = recRepo;
+        _recPartsRepo = recPartsRepo;
     }
-    
-    [Route("[controller]/uploadRecPart")]
+
+    [Route("/ws/rec/upload")]
     public async Task<IActionResult> Upload()
     {
-        if (HttpContext.WebSockets.IsWebSocketRequest)
-        {
-            using WebSocket webSocket = await HttpContext.WebSockets.AcceptWebSocketAsync();
-            RecordingPartDto recordingPart = await ProcessConnectionAsync(webSocket);
-
-            
-        }
-        else
-        {
+        if (!HttpContext.WebSockets.IsWebSocketRequest) 
             return BadRequest();
-        }
-    }
-
-    private async Task<RecordingPartDto> ProcessConnectionAsync(WebSocket webSocket)
-    {
-        MemoryStream data = await ReceiveDataAsync(webSocket);
-        StreamHelper streamHelper = new StreamHelper(data);
-
-        int dataLength = await streamHelper.ReadIntAsync();
-        int recordingPartId = await streamHelper.ReadIntAsync();
-        byte[] recordingPartData = await streamHelper.ReadBytesAsync(dataLength);
-
-        if (!_repo.Exists(recordingPartId))
-        {
-            
-        }
-
-        int recordingId = _repo.GetById(recordingPartId)!.RecordingId;
         
-        _fsHelper.SaveRecordingSoundFile(recordingId, recordingPartId, recordingPartData);
+        WebSocket webSocket = await HttpContext.WebSockets.AcceptWebSocketAsync();
+
+        var result = await ReceivePart(webSocket);
+
+        if (result.Error is not null)
+            return StatusCode(500, result.Error);
+
+        if (!_recRepo.Exists(result.RecordingId) || !_recPartsRepo.Exists(result.Id))
+            return StatusCode(500, UploadError.DoesntExist);
+
+        string path = _fsHelper.SaveRecordingSoundFile(result.Id,
+            result.RecordingId,
+            result.Data!);
+            
+        RecordingPart part = _recPartsRepo.GetById(result.Id)!;
+        part.FilePath = path;
+        _recPartsRepo.Update(part);
+
+        return Ok();
+
     }
 
-    private async Task<MemoryStream> ReceiveDataAsync(WebSocket webSocket)
+    private async Task<UploadResult> ReceivePart(WebSocket socket)
     {
-        byte[] buffer = new byte[8096];
-        MemoryStream stream = new();
+        WsHandler handler = new(socket);
 
-        while (true)
+        int? dataLength = await handler.ReadIntAsync();
+        int? recordingPartId = await handler.ReadIntAsync();
+
+        if (dataLength is null || recordingPartId is null)
         {
-            WebSocketReceiveResult result = await webSocket.ReceiveAsync(buffer, CancellationToken.None);
-            
-            stream.Write(buffer, 0, result.Count);
-
-            if (result.EndOfMessage)
-            {
-                break;
-            }
+            return new UploadResult(error: UploadError.StreamInterrupted);
         }
-
-        return stream;
+        
+        byte[] data = await handler.ReadBytesAsync(dataLength.Value);
+ 
+        if (data.Length != dataLength.Value)
+        {
+            return new UploadResult(id: recordingPartId.Value, error: UploadError.StreamInterrupted);
+        }
+        
+        return new UploadResult(recordingPartId.Value, data);
     }
 }
