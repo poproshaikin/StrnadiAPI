@@ -9,7 +9,7 @@ using StrnadiAPI.Services;
 namespace StrnadiAPI.Controllers;
 
 [ApiController]
-[Route("/users/")]
+[Route("/users")]
 public class UsersController : ControllerBase
 {
     private IUsersRepository _repository;
@@ -23,7 +23,7 @@ public class UsersController : ControllerBase
         _jwtService = new JwtService(configuration);
     }
 
-    [HttpGet("[controller]/login")]
+    [HttpGet("/login")]
     public IActionResult Login([FromBody] LoginDto loginDto)
     {
         LoginResult result = _repository.TryLogin(loginDto.Email, loginDto.Password);
@@ -54,7 +54,7 @@ public class UsersController : ControllerBase
         return BadRequest();
     }
 
-    [HttpPut("[controller]/verifyEmail")]
+    [HttpPut("/verifyEmail")]
     public IActionResult VerifyEmail([FromQuery] string userId, [FromQuery] string jwt)
     {
 #pragma warning disable CS8600 // In the inside of if block the parsedUserId will be always true
