@@ -87,7 +87,7 @@ public class UsersRepository : IUsersRepository
         try
         {
             _context.SaveChanges();
-            return UpdateResult.Success;
+            return UpdateResult.Successful;
         }
         catch (DbUpdateException)
         {
