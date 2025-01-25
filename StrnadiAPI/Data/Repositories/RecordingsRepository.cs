@@ -20,6 +20,8 @@ public interface IRecordingsRepository
     UpdateResult Update(Recording updated);
     
     DeleteResult Delete(int id);
+    
+    bool Exists(int resultRecordingId);
 }
 
 public class RecordingsRepository : IRecordingsRepository
@@ -92,7 +94,7 @@ public class RecordingsRepository : IRecordingsRepository
         try
         {
             _context.SaveChanges();
-            return UpdateResult.Success;
+            return UpdateResult.Successful;
         }
         catch (DbUpdateException)
         {
@@ -120,5 +122,10 @@ public class RecordingsRepository : IRecordingsRepository
         {
             return DeleteResult.Fail;
         }
+    }
+
+    public bool Exists(int id)
+    {
+        return _context.Recordings.Any(r => r.Id == id);
     }
 }
