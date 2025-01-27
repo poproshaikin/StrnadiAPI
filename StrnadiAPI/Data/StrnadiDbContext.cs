@@ -7,13 +7,11 @@ namespace StrnadiAPI.Data;
 
 public partial class StrnadiDbContext : DbContext
 {
-    public StrnadiDbContext()
+    private readonly IConfiguration _configuration;
+    
+    public StrnadiDbContext(IConfiguration configuration)
     {
-    }
-
-    public StrnadiDbContext(DbContextOptions<StrnadiDbContext> options)
-        : base(options)
-    {
+        _configuration = configuration;
     }
 
     public virtual DbSet<Bird> Birds { get; set; }
@@ -36,16 +34,17 @@ public partial class StrnadiDbContext : DbContext
 
     public virtual DbSet<UserPart> UserParts { get; set; }
 
+    private string _connectionString => _configuration.GetConnectionString("Default")!;
+    
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseNpgsql("Host=localhost; Port=5432; Database=Strnadi; Username=postgres; Password=15112006;");
+        => optionsBuilder.UseNpgsql(_connectionString);
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder
-            .HasPostgresEnum("FiltredSubrecordingState", new[] { "1", "2", "3", "4", "5", "6" })
-            .HasPostgresEnum("roles", new[] { "guest", "user", "admin" });
-
+            .HasPostgresEnum("FiltredSubrecordingState", ["1", "2", "3", "4", "5", "6"]);
+            // .HasPostgresEnum("userrole", ["guest", "user", "admin"]);
+        
         modelBuilder.Entity<Bird>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("Birds_pkey");
@@ -167,6 +166,10 @@ public partial class StrnadiDbContext : DbContext
             entity.HasIndex(e => e.Email, "Users_Email_key").IsUnique();
 
             entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.Role).HasConversion(
+                v => v.ToString(),
+                v => Enum.Parse<UserRole>(v));
+                
             entity.Property(e => e.Consent).HasDefaultValue(false);
             entity.Property(e => e.CreationDate)
                 .HasDefaultValueSql("now()")

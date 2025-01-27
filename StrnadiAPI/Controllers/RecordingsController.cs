@@ -27,7 +27,7 @@ public class RecordingsController : ControllerBase
         return Ok(_recRepo.Get());
     }
 
-    [HttpPost("/uploadRec")]
+    [HttpPost("/recordings/uploadRec")]
     public IActionResult UploadRec([FromBody] Recording recording)
     {
         AddResult result = _recRepo.Add(recording, returningProperty: rec => rec.Id, out int generatedId);
@@ -40,7 +40,7 @@ public class RecordingsController : ControllerBase
         return Ok(generatedId);
     }
 
-    [HttpPost("/updateRecPart")]
+    [HttpPost("/recordings/updateRecPart")]
     public IActionResult UpdateRecPart([FromBody] RecordingPart recordingPart)
     {
         AddResult result = _recPartsRepo.Add(recordingPart, returningProperty: recPart => recPart.Id, out int generatedId);

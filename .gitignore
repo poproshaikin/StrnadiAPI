@@ -6,4 +6,6 @@ StrnadiAPI/obj
 
 api
 
+.env
+
 StrnadiAPI/appsettings.json

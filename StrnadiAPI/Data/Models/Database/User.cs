@@ -6,6 +6,8 @@ namespace StrnadiAPI.Data.Models.Database;
 public partial class User
 {
     public int Id { get; set; }
+    
+    public UserRole Role { get; set; }
 
     public string? Nickname { get; set; }
 

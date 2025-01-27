@@ -1,3 +1,4 @@
+using DotNetEnv;
 using StrnadiAPI.Data;
 using StrnadiAPI.Data.Repositories;
 using StrnadiAPI.Services;
@@ -11,9 +12,14 @@ public class Program
         var builder = WebApplication.CreateBuilder(args);
         var configuration = builder.Configuration;
 
+        Env.Load();
+        
+        builder.Configuration.AddEnvironmentVariables();
+        
         builder.Services.AddControllers();
         builder.Services.AddDbContext<StrnadiDbContext>();
         builder.Services.AddScoped<IRecordingsRepository, RecordingsRepository>();
+        builder.Services.AddScoped<IRecordingPartsRepository, RecordingPartsRepository>();
         builder.Services.AddScoped<IUsersRepository, UsersRepository>();
         builder.Services.AddScoped<IEmailSender, EmailSender>();
         builder.Services.AddCors(corsOptions =>
@@ -21,13 +27,20 @@ public class Program
             corsOptions.AddPolicy(configuration["Cors:PolicyName"], policyBuilder =>
             {
                 policyBuilder
-                    .AllowAnyOrigin() 
+                    .AllowAnyOrigin()
                     .AllowAnyMethod()
                     .AllowAnyHeader();
             });
         });
         
-        var app = builder.Build();
+        WebApplication app = builder.Build();
+
+        app.MapGet("/testing", () =>
+        {
+            Console.WriteLine("Test endpoint accessed");
+            Console.WriteLine(configuration.GetConnectionString("Default"));
+            return "hello!";
+        });
 
         app.UseHttpsRedirection();
         app.MapControllers();

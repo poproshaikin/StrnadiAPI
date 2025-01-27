@@ -23,7 +23,7 @@ public class UsersController : ControllerBase
         _jwtService = new JwtService(configuration);
     }
 
-    [HttpGet("/login")]
+    [HttpGet("/users/login")]
     public IActionResult Login([FromBody] LoginDto loginDto)
     {
         LoginResult result = _repository.TryLogin(loginDto.Email, loginDto.Password);
@@ -54,7 +54,7 @@ public class UsersController : ControllerBase
         return BadRequest();
     }
 
-    [HttpPut("/verifyEmail")]
+    [HttpPut("/users/verifyEmail")]
     public IActionResult VerifyEmail([FromQuery] string userId, [FromQuery] string jwt)
     {
 #pragma warning disable CS8600 // In the inside of if block the parsedUserId will be always true
@@ -72,7 +72,7 @@ public class UsersController : ControllerBase
         return Unauthorized();
     }
     
-    [HttpGet("/{id:int}")]
+    [HttpGet("/users/{id:int}")]
     public IActionResult Get(int id)
     {
         User? user = _repository.Get(id);
