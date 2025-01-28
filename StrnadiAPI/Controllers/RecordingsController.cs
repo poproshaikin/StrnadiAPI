@@ -30,7 +30,7 @@ public class RecordingsController : ControllerBase
     [HttpPost("/recordings/uploadRec")]
     public IActionResult UploadRec([FromBody] Recording recording)
     {
-        AddResult result = _recRepo.Add(recording, returningProperty: rec => rec.Id, out int generatedId);
+        AddResult result = _recRepo.Add(recording, returning: rec => rec.Id, out int generatedId);
         
         if (result == AddResult.Fail)
         {
@@ -43,7 +43,7 @@ public class RecordingsController : ControllerBase
     [HttpPost("/recordings/updateRecPart")]
     public IActionResult UpdateRecPart([FromBody] RecordingPart recordingPart)
     {
-        AddResult result = _recPartsRepo.Add(recordingPart, returningProperty: recPart => recPart.Id, out int generatedId);
+        AddResult result = _recPartsRepo.Add(recordingPart, returning: recPart => recPart.Id, out int generatedId);
 
         if (result == AddResult.Fail)
         {
