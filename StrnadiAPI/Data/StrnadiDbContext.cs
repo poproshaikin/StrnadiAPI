@@ -42,8 +42,8 @@ public partial class StrnadiDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder
-            .HasPostgresEnum<FiltredSubrecordingState>()
-            .HasPostgresEnum<UserRole>();
+            .HasPostgresEnum("\"FiltredSubrecordingState\"", ["1", "2", "3", "4", "5", "6"])
+            .HasPostgresEnum("\"UserRole\"", ["user", "admin"]);
         
         modelBuilder.Entity<Bird>(entity =>
         {
@@ -166,9 +166,10 @@ public partial class StrnadiDbContext : DbContext
             entity.HasIndex(e => e.Email, "Users_Email_key").IsUnique();
 
             entity.Property(e => e.Id).ValueGeneratedNever();
-            entity.Property(e => e.Role).HasConversion(
-                v => v.ToString(),
-                v => Enum.Parse<UserRole>(v));
+            entity.Property(e => e.Role).HasConversion<string>(
+                role => ConvertUserRole(role),
+                @string => ConvertUserRole(@string)
+            );
                 
             entity.Property(e => e.Consent).HasDefaultValue(false);
             entity.Property(e => e.CreationDate)
@@ -208,9 +209,25 @@ public partial class StrnadiDbContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_recording_part_id");
         });
-
-        OnModelCreatingPartial(modelBuilder);
     }
 
-    partial void OnModelCreatingPartial(ModelBuilder modelBuilder);
+    private string ConvertUserRole(UserRole role)
+    {
+        return role switch
+        {
+            UserRole.Admin => "admin",
+            UserRole.User => "user",
+            _ => throw new ArgumentOutOfRangeException(nameof(role), role, null)
+        };
+    }
+
+    private UserRole ConvertUserRole(string role)
+    {
+        return role switch
+        {
+            "admin" => UserRole.Admin,
+            "user" => UserRole.User,
+            _ => throw new ArgumentOutOfRangeException(nameof(role), role, null)
+        };
+    }
 }

@@ -8,6 +8,8 @@ public partial class FiltredSubrecording
     public int Id { get; set; }
 
     public int RecordingPartId { get; set; }
+    
+    public FiltredSubrecordingState State { get; set; }
 
     public int? BirdsId { get; set; }
 
