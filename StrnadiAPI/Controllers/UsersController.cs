@@ -3,6 +3,7 @@ using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.Mvc;
 using StrnadiAPI.Data.Models;
 using StrnadiAPI.Data.Models.Database;
+using StrnadiAPI.Data.Models.Server;
 using StrnadiAPI.Data.Repositories;
 using StrnadiAPI.Services;
 
@@ -23,17 +24,17 @@ public class UsersController : ControllerBase
         _jwtService = new JwtService(configuration);
     }
 
-    [HttpGet("/users/login")]
-    public IActionResult Login([FromBody] LoginDto loginDto)
+    [HttpPost("/users/login")]
+    public IActionResult Login([FromBody] LoginRequest loginRequest)
     {
-        LoginResult result = _repository.TryLogin(loginDto.Email, loginDto.Password);
-
+        LoginResult result = _repository.TryLogin(loginRequest.Email, loginRequest.Password);
+        
         if (result == LoginResult.Success)
         {
-            return Ok(_jwtService.GenerateToken(loginDto.Email));
+            return Ok(_jwtService.GenerateToken(loginRequest.Email));
         }
-        
-        return Ok(result);
+
+        return Unauthorized();
     }
     
     [HttpPost]
@@ -46,6 +47,8 @@ public class UsersController : ControllerBase
         
         if (result == AddResult.Success)
         {
+            Logger.Log($"Sending verification email to : {user.Email}");
+            
             _emailSender.SendVerificationMessage(HttpContext, user.Email, user.Id);
             
             return Ok();
@@ -55,19 +58,16 @@ public class UsersController : ControllerBase
     }
 
     [HttpPut("/users/verifyEmail")]
-    public IActionResult VerifyEmail([FromQuery] string userId, [FromQuery] string jwt)
+    public IActionResult VerifyEmail([FromQuery] string jwt)
     {
-#pragma warning disable CS8600 // In the inside of if block the parsedUserId will be always true
-        if (_jwtService.TryParseUserId(jwt, out string parsedUserId))
-#pragma warning restore CS8600 //
+        Logger.Log($"Trying to verify email with JWT");
+        
+#pragma warning disable CS8600 // In the inside of if block the parsedEmail will be always true
+        if (_jwtService.TryParseEmail(jwt, out string parsedEmail))
         {
-            if (userId != parsedUserId)
-            {
-                return Unauthorized();
-            }
-
-            _repository.ConfirmEmail(userId);
+            _repository.ConfirmEmail(parsedEmail!);
         }
+#pragma warning restore CS8600 //
         
         return Unauthorized();
     }
