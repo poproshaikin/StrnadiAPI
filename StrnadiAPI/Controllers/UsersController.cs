@@ -31,7 +31,7 @@ public class UsersController : ControllerBase
         
         if (result == LoginResult.Success)
         {
-            return Ok(_jwtService.GenerateToken(loginRequest.Email));
+            return Ok(new {Token = _jwtService.GenerateToken(loginRequest.Email)});
         }
 
         return Unauthorized();
@@ -47,7 +47,8 @@ public class UsersController : ControllerBase
         
         if (result == AddResult.Success)
         {
-            Logger.Log($"Sending verification email to : {user.Email}");
+            Logger.Log($"User '{user.Email}' registered successfully.");
+            Logger.Log($"Sending verification email to : '{user.Email}'");
             
             _emailSender.SendVerificationMessage(HttpContext, user.Email, user.Id);
             
@@ -76,6 +77,8 @@ public class UsersController : ControllerBase
     public IActionResult Get(int id)
     {
         User? user = _repository.Get(id);
+        
+        Logger.Log($"Tried to get user with id: {id}.");
         
         return user is null ?
             NotFound() :
