@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using StrnadiAPI.Data.Models.Database;
+using StrnadiAPI.Services;
 
 namespace StrnadiAPI.Data.Repositories;
 
@@ -50,17 +51,7 @@ public class UsersRepository : IUsersRepository
 
     public IReadOnlyList<User> Get()
     {
-        return _users.Select(user => new User()
-        {
-            Id = user.Id,
-            Nickname = user.Nickname, 
-            Email = user.Email,
-            FirstName = user.FirstName,
-            LastName = user.LastName,
-            IsEmailVerified = user.IsEmailVerified,
-            Consent = user.Consent,
-            CreationDate = user.CreationDate
-        }).ToArray();
+        return _users.SelectWithout(user => user.Password).ToArray();
     }
 
     public User? Get(int id)
@@ -132,10 +123,9 @@ public class UsersRepository : IUsersRepository
         return LoginResult.WrongPassword;
     }
 
-    public void ConfirmEmail(string userId)
+    public void ConfirmEmail(string email)
     {
-        int userIdInt = int.Parse(userId);
-        User user = _users.FirstOrDefault(u => u.Id == userIdInt)!;
+        User user = _users.FirstOrDefault(u => u.Email == email)!;
         
         user.IsEmailVerified = true;
         _context.SaveChanges();
