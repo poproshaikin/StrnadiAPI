@@ -10,8 +10,8 @@ public interface IRecordingsRepository
     AddResult Add(Recording recording);
 
     AddResult Add<TProperty>(Recording recording, 
-        Expression<Func<Recording, TProperty>> returningProperty,
-        out TProperty? returnedValue);
+        Expression<Func<Recording, TProperty>> returning,
+        out TProperty? value);
     
     IReadOnlyList<Recording> Get();
     
@@ -48,19 +48,19 @@ public class RecordingsRepository : IRecordingsRepository
     }
 
     public AddResult Add<TProperty>(Recording recording,
-        Expression<Func<Recording, TProperty>> returningProperty,
-        out TProperty? returnedValue)
+        Expression<Func<Recording, TProperty>> returning,
+        out TProperty? value)
     {
         try
         {
             EntityEntry<Recording> addedEntity = _context.Recordings.Add(recording);
             _context.SaveChanges();
-            returnedValue = returningProperty.Compile()(addedEntity.Entity);
+            value = returning.Compile()(addedEntity.Entity);
             return AddResult.Success;
         }
         catch (DbUpdateException)
         {
-            returnedValue = default;
+            value = default;
             return AddResult.Fail;
         }
     }
