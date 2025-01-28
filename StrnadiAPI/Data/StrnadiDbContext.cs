@@ -42,8 +42,8 @@ public partial class StrnadiDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder
-            .HasPostgresEnum("FiltredSubrecordingState", ["1", "2", "3", "4", "5", "6"]);
-            // .HasPostgresEnum("userrole", ["guest", "user", "admin"]);
+            .HasPostgresEnum<FiltredSubrecordingState>()
+            .HasPostgresEnum<UserRole>();
         
         modelBuilder.Entity<Bird>(entity =>
         {
