@@ -10,13 +10,13 @@ public class JwtService
 {
     private IConfiguration _configuration;
     
-    private string _secretKey => _configuration["Authentication:JwtSecretKey"];
+    private string _secretKey => _configuration["Authentication:JwtSecretKey"] ?? throw new NullReferenceException("Invalid configuration key passed");
     
-    private string _issuer => _configuration["Authentication:JwtIssuer"];
+    private string _issuer => _configuration["Authentication:JwtIssuer"] ?? throw new NullReferenceException("Invalid configuration key passed");
     
-    private string _audience => _configuration["Authentication:JwtAudience"];
+    private string _audience => _configuration["Authentication:JwtAudience"] ?? throw new NullReferenceException("Invalid configuration key passed");
     
-    private string _lifetime => _configuration["Authentication:JwtLifetime"];
+    private string _lifetime => _configuration["Authentication:JwtLifetime"] ?? throw new NullReferenceException("Invalid configuration key passed");
     
     private TimeSpan _lifetimeAsTimeSpan => TimeSpan.Parse(_lifetime);
     
@@ -53,7 +53,7 @@ public class JwtService
         
         string jwtToken = tokenHandler.WriteToken(token);
         
-        Logger.Log($"Generated token for user {email} : {jwtToken}");
+        Logger.Log($"Generated token for user '{email}' : {jwtToken}");
 
         return jwtToken;
     }
