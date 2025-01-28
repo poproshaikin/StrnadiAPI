@@ -10,13 +10,13 @@ public class JwtService
 {
     private IConfiguration _configuration;
     
-    private string _secretKey => _configuration["Jwt:SecretKey"];
+    private string _secretKey => _configuration["Authentication:JwtSecretKey"];
     
-    private string _issuer => _configuration["Jwt:Issuer"];
+    private string _issuer => _configuration["Authentication:JwtIssuer"];
     
-    private string _audience => _configuration["Jwt:Audience"];
+    private string _audience => _configuration["Authentication:JwtAudience"];
     
-    private string _lifetime => _configuration["Jwt:Lifetime"];
+    private string _lifetime => _configuration["Authentication:JwtLifetime"];
     
     private TimeSpan _lifetimeAsTimeSpan => TimeSpan.Parse(_lifetime);
     
@@ -25,15 +25,15 @@ public class JwtService
         _configuration = configuration;
     }
 
-    public string GenerateToken(string userId)
+    public string GenerateToken(string email)
     {
         Claim[] claims =
         [
-            new Claim(JwtRegisteredClaimNames.Sub, userId),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            new Claim(JwtRegisteredClaimNames.Iss, _issuer),
-            new Claim(JwtRegisteredClaimNames.Aud, _audience),
-            new Claim(JwtRegisteredClaimNames.Exp, _lifetime)
+            new(JwtRegisteredClaimNames.Sub, email),
+            new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new(JwtRegisteredClaimNames.Iss, _issuer),
+            new(JwtRegisteredClaimNames.Aud, _audience),
+            new(JwtRegisteredClaimNames.Exp, _lifetime)
         ];
         
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secretKey));
@@ -50,14 +50,20 @@ public class JwtService
 
         var tokenHandler = new JwtSecurityTokenHandler();
         var token = tokenHandler.CreateToken(tokenDescriptor);
+        
+        string jwtToken = tokenHandler.WriteToken(token);
+        
+        Logger.Log($"Generated token for user {email} : {jwtToken}");
 
-        return tokenHandler.WriteToken(token);
+        return jwtToken;
     }
 
-    public bool TryParseUserId(string token, out string? userId)
+    public bool TryParseEmail(string token, out string? email)
     {
+        Logger.Log($"Trying to authorize with token {token}");
+        
         var tokenHandler = new JwtSecurityTokenHandler();
-        var key = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(_secretKey));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secretKey));
 
         var validationParameters = new TokenValidationParameters
         {
@@ -70,13 +76,14 @@ public class JwtService
         {
             ClaimsPrincipal? claimsPrincipal = tokenHandler.ValidateToken(token, validationParameters, out _);
 
-            userId = claimsPrincipal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+            email = claimsPrincipal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         }
         catch (Exception)
         {
-            userId = null;
+            email = null;
         }
-
-        return userId is not null;
+        
+        Logger.Log(email is null ? "Authorization failed" : $"Authorization successfull : {email}");
+        return email is not null;
     }
 }
