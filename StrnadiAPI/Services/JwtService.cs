@@ -77,7 +77,7 @@ public class JwtService
             email = claimsPrincipal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
             return email is not null;
         }
-        catch (SecurityTokenException ex)
+        catch (Exception ex)
         {
             email = null;
             Logger.Log($"Token validation failed: {ex.Message}");
