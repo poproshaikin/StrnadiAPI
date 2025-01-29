@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -19,6 +20,7 @@ public class JwtService
     private string _lifetime => _configuration["Authentication:JwtLifetime"] ?? throw new NullReferenceException("Invalid configuration key passed");
     
     private TimeSpan _lifetimeAsTimeSpan => TimeSpan.Parse(_lifetime);
+    private DateTime _issuedAt => DateTime.UtcNow.Add(_lifetimeAsTimeSpan);
     
     public JwtService(IConfiguration configuration)
     {
@@ -33,7 +35,7 @@ public class JwtService
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new(JwtRegisteredClaimNames.Iss, _issuer),
             new(JwtRegisteredClaimNames.Aud, _audience),
-            new(JwtRegisteredClaimNames.Exp, _lifetime)
+            new(JwtRegisteredClaimNames.Exp, new DateTimeOffset(_issuedAt).ToUnixTimeSeconds().ToString())
         ];
         
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secretKey));
@@ -52,15 +54,12 @@ public class JwtService
         var token = tokenHandler.CreateToken(tokenDescriptor);
         
         string jwtToken = tokenHandler.WriteToken(token);
-        
-        Logger.Log($"Generated token for user '{email}' : {jwtToken}");
 
         return jwtToken;
     }
 
     public bool TryParseEmail(string token, out string? email)
     {
-        Logger.Log($"Trying to authorize with token {token}");
         
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secretKey));
@@ -69,7 +68,11 @@ public class JwtService
         {
             ValidateIssuer = true,
             ValidateAudience = true,
-            IssuerSigningKey = key
+            ValidateLifetime = true,
+            ValidIssuer = _issuer,
+            ValidAudience = _audience,
+            IssuerSigningKey = key,
+            ClockSkew = TimeSpan.Zero
         };
 
         try
@@ -78,12 +81,12 @@ public class JwtService
 
             email = claimsPrincipal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
         }
-        catch (Exception)
+        catch (SecurityTokenException ex)
         {
+            Console.WriteLine($"JWT validation failed: {ex.Message}");
             email = null;
         }
         
-        Logger.Log(email is null ? "Authorization failed" : $"Authorization successfull : {email}");
         return email is not null;
     }
 }
