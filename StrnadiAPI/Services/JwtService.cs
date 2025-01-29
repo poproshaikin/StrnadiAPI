@@ -34,59 +34,103 @@ public class JwtService
 
     public string GenerateToken(string email)
     {
-        var claims = new[]
-        {
-            new Claim("sub", email),
-        };
-        var creds = new SigningCredentials(_securityKey, security_algorithm);
+        var tokenHandler = new JwtSecurityTokenHandler();
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {
-            Subject = new ClaimsIdentity(claims),
-            Expires = _expiresAt,
-            SigningCredentials = creds,
-            Issuer = _issuer,
-            Audience = _audience
+            Subject = new ClaimsIdentity([
+                new Claim(ClaimTypes.Email, email)
+            ]),
+            SigningCredentials = new SigningCredentials(_securityKey, security_algorithm),
+            Expires = _expiresAt
         };
 
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var token = tokenHandler.CreateToken(tokenDescriptor);
+        SecurityToken token = tokenHandler.CreateToken(tokenDescriptor);
         return tokenHandler.WriteToken(token);
+        
+        // var claims = new[]
+        // {
+        //     new Claim("sub", email),
+        // };
+        // var creds = new SigningCredentials(_securityKey, security_algorithm);
+        //
+        // var tokenDescriptor = new SecurityTokenDescriptor
+        // {
+        //     Subject = new ClaimsIdentity(claims),
+        //     Expires = _expiresAt,
+        //     SigningCredentials = creds,
+        //     Issuer = _issuer,
+        //     Audience = _audience
+        // };
+        //
+        // var tokenHandler = new JwtSecurityTokenHandler();
+        // var token = tokenHandler.CreateToken(tokenDescriptor);
+        // return tokenHandler.WriteToken(token);
     }
 
     public bool ValidateToken(string token, out string? email)
+    {
+        if (Validate(token))
+        {
+            email = GetEmail(token);
+
+            if (email is null)
+            {
+                Logger.Log("Failed to read email from validated token.");
+                return false;
+            }
+
+            return true;
+        }
+        
+        Logger.Log("Failed to validate JWT token.");
+
+        email = null;
+        return false;
+    }
+
+    private bool Validate(string token)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
 
         var validationParameters = new TokenValidationParameters
         {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = _securityKey,
             ValidateIssuer = true,
             ValidIssuer = _issuer,
             ValidateAudience = true,
             ValidAudience = _audience,
             ValidateLifetime = true,
-            ClockSkew = TimeSpan.Zero, 
-            IssuerSigningKey = _securityKey,
-            RequireExpirationTime = true
+            ClockSkew = TimeSpan.Zero
         };
 
         try
         {
-            ClaimsPrincipal claimsPrincipal = tokenHandler.ValidateToken(token, validationParameters, out SecurityToken validatedToken);
-
-            foreach (Claim claim in claimsPrincipal.Claims)
-            {
-                Console.WriteLine(claim.Type + ": " + claim.Value);
-            }
-            
-            email = claimsPrincipal.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
-            return email is not null;
+            tokenHandler.ValidateToken(token, validationParameters, out _);
+            return true;
         }
-        catch (Exception ex)
+        catch (SecurityTokenException)
         {
-            email = null;
-            Logger.Log($"Token validation failed: {ex.Message}");
             return false;
         }
+        catch (Exception e)
+        {
+            Logger.Log($"Exception thrown during JWT token validation: {e.Message}");
+            return false;
+        }
+    }
+
+    private Claim[] GetClaims(string token)
+    {
+        var tokenHandler = new JwtSecurityTokenHandler();
+        JwtSecurityToken? decodedToken = tokenHandler.ReadJwtToken(token);
+        
+        return decodedToken.Claims.ToArray();
+    }
+    
+    private string? GetEmail(string token)
+    {
+        return GetClaims(token).FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
     }
 }
