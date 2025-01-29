@@ -35,13 +35,6 @@ public class Program
         
         WebApplication app = builder.Build();
 
-        app.MapGet("/testing", () =>
-        {
-            Console.WriteLine("Test endpoint accessed");
-            Console.WriteLine(configuration.GetConnectionString("Default"));
-            return "hello!";
-        });
-
         app.UseHttpsRedirection();
         app.MapControllers();
         app.Run();
