@@ -134,6 +134,6 @@ public class JwtService
     
     private string? GetEmail(string token)
     {
-        return GetClaims(token).FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
+        return GetClaims(token).FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Email)?.Value;
     }
 }
