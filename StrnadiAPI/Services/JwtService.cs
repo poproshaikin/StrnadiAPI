@@ -39,7 +39,9 @@ public class JwtService
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity([
-                new Claim(ClaimTypes.Email, email)
+                new Claim(JwtRegisteredClaimNames.Email, email),
+                new Claim(JwtRegisteredClaimNames.Iss, _issuer),
+                new Claim(JwtRegisteredClaimNames.Aud, _audience),
             ]),
             SigningCredentials = new SigningCredentials(_securityKey, security_algorithm),
             Expires = _expiresAt
