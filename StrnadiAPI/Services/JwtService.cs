@@ -73,8 +73,13 @@ public class JwtService
         try
         {
             ClaimsPrincipal claimsPrincipal = tokenHandler.ValidateToken(token, validationParameters, out SecurityToken validatedToken);
+
+            foreach (Claim claim in claimsPrincipal.Claims)
+            {
+                Console.WriteLine(claim.Type + ": " + claim.Value);
+            }
             
-            email = claimsPrincipal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+            email = claimsPrincipal.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value;
             return email is not null;
         }
         catch (Exception ex)
