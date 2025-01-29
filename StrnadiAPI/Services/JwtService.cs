@@ -110,13 +110,14 @@ public class JwtService
             tokenHandler.ValidateToken(token, validationParameters, out _);
             return true;
         }
-        catch (SecurityTokenException)
+        catch (SecurityTokenException ex)
         {
+            Logger.Log($"Failed to validate JWT token: {ex.Message}");
             return false;
         }
         catch (Exception e)
         {
-            Logger.Log($"Exception thrown during JWT token validation: {e.Message}");
+            Logger.Log($"An exception thrown during JWT token validation: {e.Message}");
             return false;
         }
     }
