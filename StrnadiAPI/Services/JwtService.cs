@@ -79,7 +79,7 @@ public class JwtService
                 Console.WriteLine(claim.Type + ": " + claim.Value);
             }
             
-            email = claimsPrincipal.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value;
+            email = claimsPrincipal.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
             return email is not null;
         }
         catch (Exception ex)
