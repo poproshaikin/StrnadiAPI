@@ -1,5 +1,7 @@
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace StrnadiAPI.Services;
 
@@ -47,5 +49,13 @@ public static class Extensions
         }
 
         throw new ArgumentException("Invalid expression format. Must be a member access.", nameof(expression));
+    }
+
+    public static string Sha256(this string s)
+    {
+        using var sha256 = SHA256.Create();
+        byte[] bytes = Encoding.UTF8.GetBytes(s);
+        byte[] hashBytes = sha256.ComputeHash(bytes);
+        return Convert.ToHexString(hashBytes); // C# 5.0+ (или BitConverter.ToString(hashBytes).Replace("-", "").ToLower())
     }
 }
