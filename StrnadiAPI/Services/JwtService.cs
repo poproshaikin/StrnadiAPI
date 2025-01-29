@@ -36,7 +36,7 @@ public class JwtService
     {
         var claims = new[]
         {
-            new Claim(JwtRegisteredClaimNames.Sub, email),
+            new Claim("sub", email),
         };
         var creds = new SigningCredentials(_securityKey, security_algorithm);
 
