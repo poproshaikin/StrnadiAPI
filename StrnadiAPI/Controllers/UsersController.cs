@@ -67,6 +67,7 @@ public class UsersController : ControllerBase
         {
             _repository.ConfirmEmail(parsedEmail);
             Logger.Log($"Email {parsedEmail} verified successfully.");
+            return Ok();
         }
 #pragma warning restore CS8600 //
         
