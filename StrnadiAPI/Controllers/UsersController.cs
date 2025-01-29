@@ -1,7 +1,4 @@
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.Mvc;
-using StrnadiAPI.Data.Models;
 using StrnadiAPI.Data.Models.Database;
 using StrnadiAPI.Data.Models.Server;
 using StrnadiAPI.Data.Repositories;
@@ -42,6 +39,8 @@ public class UsersController : ControllerBase
     {
         if (user.Email == null!) 
             return BadRequest();
+
+        // user.Password = user.Password.Sha256();
         
         AddResult result = _repository.Add(user);
         
@@ -67,6 +66,7 @@ public class UsersController : ControllerBase
         if (_jwtService.TryParseEmail(jwt, out string parsedEmail))
         {
             _repository.ConfirmEmail(parsedEmail!);
+            Logger.Log($"Email {parsedEmail} verified successfully.");
         }
 #pragma warning restore CS8600 //
         
