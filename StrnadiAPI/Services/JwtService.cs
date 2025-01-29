@@ -20,56 +20,30 @@ public class JwtService
     private string _lifetime => _configuration["Authentication:JwtLifetime"] ?? throw new NullReferenceException("Invalid configuration key passed");
     
     private TimeSpan _lifetimeAsTimeSpan => TimeSpan.Parse(_lifetime);
-    private DateTime _issuesAt => DateTime.UtcNow.Add(_lifetimeAsTimeSpan);
+    private DateTime _expiresAt => DateTime.UtcNow.Add(_lifetimeAsTimeSpan);
+    
+    private const string security_algorithm = SecurityAlgorithms.HmacSha256;
+
+    private readonly SecurityKey _securityKey;
     
     public JwtService(IConfiguration configuration)
     {
         _configuration = configuration;
+        _securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secretKey));
     }
 
     public string GenerateToken(string email)
     {
-        // Claim[] claims =
-        // [
-        //     new(JwtRegisteredClaimNames.Sub, email),
-        //     new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-        //     new(JwtRegisteredClaimNames.Iss, _issuer),
-        //     new(JwtRegisteredClaimNames.Aud, _audience),
-        //     new(JwtRegisteredClaimNames.Exp, new DateTimeOffset(_issuedAt).ToUnixTimeSeconds().ToString())
-        // ];
-        //
-        // var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secretKey));
-        // var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-        //
-        // var tokenDescriptor = new SecurityTokenDescriptor
-        // {
-        //     Subject = new ClaimsIdentity(claims),
-        //     Expires = DateTime.UtcNow.Add(_lifetimeAsTimeSpan),
-        //     SigningCredentials = creds,
-        //     Issuer = _issuer,
-        //     Audience = _audience
-        // };
-        //
-        // var tokenHandler = new JwtSecurityTokenHandler();
-        // var token = tokenHandler.CreateToken(tokenDescriptor);
-        //
-        // string jwtToken = tokenHandler.WriteToken(token);
-        //
-        // return jwtToken;
-        
         var claims = new[]
         {
             new Claim(JwtRegisteredClaimNames.Sub, email),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
         };
-
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secretKey));
-        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+        var creds = new SigningCredentials(_securityKey, security_algorithm);
 
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new ClaimsIdentity(claims),
-            Expires = _issuesAt,
+            Expires = _expiresAt,
             SigningCredentials = creds,
             Issuer = _issuer,
             Audience = _audience
@@ -77,14 +51,12 @@ public class JwtService
 
         var tokenHandler = new JwtSecurityTokenHandler();
         var token = tokenHandler.CreateToken(tokenDescriptor);
-
         return tokenHandler.WriteToken(token);
     }
 
-    public bool TryParseEmail(string token, out string? email)
+    public bool ValidateToken(string token, out string? email)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secretKey));
 
         var validationParameters = new TokenValidationParameters
         {
@@ -93,49 +65,23 @@ public class JwtService
             ValidateAudience = true,
             ValidAudience = _audience,
             ValidateLifetime = true,
-            IssuerSigningKey = key,
-            ValidateIssuerSigningKey = true
+            ClockSkew = TimeSpan.Zero, 
+            IssuerSigningKey = _securityKey,
+            RequireExpirationTime = true
         };
 
         try
         {
-            var principal = tokenHandler.ValidateToken(token, validationParameters, out _);
-            email = principal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+            ClaimsPrincipal claimsPrincipal = tokenHandler.ValidateToken(token, validationParameters, out SecurityToken validatedToken);
+            
+            email = claimsPrincipal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
             return email is not null;
         }
         catch (SecurityTokenException ex)
         {
-            Logger.Log($"JWT validation error: {ex.Message}");
             email = null;
+            Logger.Log($"Token validation failed: {ex.Message}");
             return false;
         }
-        
-        // var tokenHandler = new JwtSecurityTokenHandler();
-        // var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_secretKey));
-        //
-        // var validationParameters = new TokenValidationParameters
-        // {
-        //     ValidateIssuer = true,
-        //     ValidateAudience = true,
-        //     ValidateLifetime = true,
-        //     ValidIssuer = _issuer,
-        //     ValidAudience = _audience,
-        //     IssuerSigningKey = key,
-        //     ClockSkew = TimeSpan.Zero
-        // };
-        //
-        // try
-        // {
-        //     ClaimsPrincipal? claimsPrincipal = tokenHandler.ValidateToken(token, validationParameters, out _);
-        //
-        //     email = claimsPrincipal.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
-        // }
-        // catch (SecurityTokenException ex)
-        // {
-        //     Console.WriteLine($"JWT validation failed: {ex.Message}");
-        //     email = null;
-        // }
-        //
-        // return email is not null;
     }
 }

@@ -62,10 +62,10 @@ public class UsersController : ControllerBase
     {
         Logger.Log($"Trying to verify email with JWT");
         
-#pragma warning disable CS8600 // In the inside of if block the parsedEmail will be always true
-        if (_jwtService.TryParseEmail(jwt, out string parsedEmail))
+#pragma warning disable CS8600 CS8604 // In the inside of if block the parsedEmail will be always true
+        if (_jwtService.ValidateToken(jwt, out string parsedEmail))
         {
-            _repository.ConfirmEmail(parsedEmail!);
+            _repository.ConfirmEmail(parsedEmail);
             Logger.Log($"Email {parsedEmail} verified successfully.");
         }
 #pragma warning restore CS8600 //
